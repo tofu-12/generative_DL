@@ -44,7 +44,10 @@ class CelebADataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image, image
+        label_numpy = (self.target_img_labels.iloc[idx, 1:].to_numpy(dtype=np.int64) + 1) // 2
+        label_tensor = torch.tensor(label_numpy, dtype=torch.float32)
+
+        return image, label_tensor
 
 
 if __name__ == "__main__":
