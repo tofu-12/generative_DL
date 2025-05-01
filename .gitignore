@@ -37,5 +37,8 @@ data/
 # 学習ずみ重み
 */model_weight.pth
 
+# mac関連
+.DS_Store
+
 # .gitignoreを追跡
 !.gitignore
