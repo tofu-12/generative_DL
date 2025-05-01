@@ -34,5 +34,8 @@ cover/
 # データセット
 data/
 
+# 学習ずみ重み
+*/model_weight.pth
+
 # .gitignoreを追跡
 !.gitignore
