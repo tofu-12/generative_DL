@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 
 import numpy as np
@@ -7,6 +8,9 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
+from schemas import Dataloaders
 
 
 class CelebADataset(Dataset):
@@ -50,16 +54,53 @@ class CelebADataset(Dataset):
         return image, label_tensor
 
 
-if __name__ == "__main__":
+def get_CelebA_data(batch_size: int) -> Dataloaders:
+    """
+    CelebAデータセットのデータローダを取得する関数
+
+    Args:
+        batch_size: バッチサイズ
+    
+    Returns:
+        Dataloaders
+    
+    Raise:
+        Exception: 取得できない際のエラー
+    """
     # pathの設定
     annotation_file = os.path.join(os.path.dirname(__file__), os.pardir, "data", "CelebA", "list_attr_celeba.csv")
     partition_file = os.path.join(os.path.dirname(__file__), os.pardir, "data", "CelebA", "list_eval_partition.csv")
     img_dir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "CelebA", "img_align_celeba")
 
-    # データセットの初期化
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+    # データセットの生成
+    try:
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize((64, 64))
+        ])
 
-    dataset = CelebADataset(img_dir, annotation_file, partition_file, "train", transform)
-    print(dataset[0])
+        train_dataset = CelebADataset(img_dir, annotation_file, partition_file, "train", transform)
+        validation_dataset = CelebADataset(img_dir, annotation_file, partition_file, "val", transform)
+        test_dataset = CelebADataset(img_dir, annotation_file, partition_file, "test", transform)
+    
+    except Exception as e:
+        raise Exception(f"データセットの作成に失敗しました: \n {str(e)}")
+
+    # データローダの作成
+    try:
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle=True, num_workers=2)
+        validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size, shuffle=True, num_workers=2)
+        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=True, num_workers=2)
+        dataloaders = Dataloaders(train=train_dataloader, val=validation_dataloader, test=test_dataloader)
+
+        return dataloaders
+
+    except Exception as e:
+        raise Exception(f"データローダの作成に失敗しました: \n {str(e)}")
+
+    
+if __name__ == "__main__":
+    data = get_CelebA_data(batch_size=1)
+    print(data.train.dataset[0])
+    print("max: ", str(data.train.dataset[0][0].max()))
+    print("min: ", str(data.train.dataset[0][0].min()))
