@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 from base_client.model_run_client import ModelRunClient
 from schemas import VAEHistory
 
