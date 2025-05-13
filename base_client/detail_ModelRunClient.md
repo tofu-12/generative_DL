@@ -145,5 +145,5 @@ def _load_model(self, model_file_name: str) -> None:
 
 # 可視化関連
 def visualize_model_size(self, checking_model_structure: bool=False) -> None:
-def visualize_loss_history(self) -> None:
+def visualize_loss_history(self, history: History=None) -> None:
 ```

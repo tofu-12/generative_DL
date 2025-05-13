@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
-from schemas import Dataloaders
+from schemas import Dataloaders, History
 
 
 class ModelRunClient:
@@ -256,16 +256,21 @@ class ModelRunClient:
         except Exception as e:
             print(f"モデルのサイズを確認に失敗しました: {str(e)}")
 
-    def visualize_loss_history(self) -> None:
+    def visualize_loss_history(self, history: History=None) -> None:
         """
         学習履歴の可視化
+
+        Args:
+            history: 学習履歴 (Noneの場合はself.historyにする)
         """
         try:
-            if not hasattr(self, 'history') or self.history is None:
+            if not history:
+                history = self.history
+            
+            if history is None:
                 print("学習履歴がありません。モデルを訓練してから実行してください。")
                 return
 
-            history = self.history
             num_plots = 0
             if history.train_loss_per_batch and len(history.train_loss_per_batch) > 0:
                 num_plots += 1

@@ -28,7 +28,7 @@
 
 ### SimpleGAN
 **基本的なGAN**
-- インスタンス変数として、DiscriminatorとGeneratorを持つ
+- インスタンス変数として、DiscriminatorとGeneratorを持つ。
 
 ## アーキテクチャ
 ### Discriminator
