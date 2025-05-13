@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 from dataset.fashion_mnist_dataset import get_fashion_mnist_data
@@ -18,7 +19,7 @@ from utils import get_device, save_model
 # 学習パラメータの設定
 BATCH_SIZE = 64
 MAX_EPOCH = 50
-GENERATOR_TRAIN_PER_EPOCH = 2
+GENERATOR_TRAIN_PER_EPOCH = 1
 DROP_RATE = 0.5
 LATENT_DIM = 100
 
@@ -186,6 +187,80 @@ def train(
         
     finally:
         visualize_history(history_discriminator, history_generator)
+        generate_img(device, generator)
+
+
+def test(
+    device: torch.device,
+    dataloaders: Dataloaders,
+    discriminator: nn.Module,
+    generator: nn.Module,
+    loss_function: Callable,
+) -> None:
+    """
+    テストを実行する関数
+
+    Args:
+        device: デバイス
+        detaloaders: Dataloadersクラスのデータ
+        discriminator: 識別器
+        generator: 生成器
+        loss_function: 損失関数
+    
+    Raise:
+        Exception: エラーが発生した場合
+    """
+    try:
+        test_dataset_size = len(dataloaders.test.dataset)
+
+        total_loss_discriminator = 0.0
+        total_loss_generator = 0.0
+
+        discriminator.eval()
+        generator.eval()
+
+        with torch.no_grad():
+            with tqdm(total=test_dataset_size, desc="Test") as pbar:
+                for (X, _) in dataloaders.test:
+                    batch_size_actual = len(X)
+                    X = X.to(device)
+
+                    # 識別器のラベルの作成
+                    label_real = torch.ones((batch_size_actual, 1), dtype=torch.float32).to(device)
+                    label_fake = torch.zeros((batch_size_actual, 1), dtype=torch.float32).to(device)
+
+                    # 画像の生成
+                    latent_vec = torch.randn((batch_size_actual, LATENT_DIM), dtype=torch.float32).to(device)
+                    img_fake = generator.forward(latent_vec)
+
+                    # 識別器の損失
+                    # 実画像
+                    pred_real = discriminator.forward(X)
+                    loss_real = loss_function(pred_real, label_real)
+
+                    # 偽画像
+                    pred_fake = discriminator.forward(img_fake)
+                    loss_fake = loss_function(pred_fake, label_fake)
+
+                    loss_discriminator = (loss_real + loss_fake) / 2.0
+                    total_loss_discriminator += loss_discriminator.item()
+
+                    # 生成器の損失
+                    loss_generator = loss_function(pred_fake, label_real)
+                    total_loss_generator += loss_generator.item()
+
+                    pbar.update(batch_size_actual)
+        
+        # ----- visualize test result --- #
+        print("Finish test!")
+        print(f"discriminator loss: {(total_loss_discriminator / test_dataset_size):>7f}")
+        print(f"generator loss: {(total_loss_generator / test_dataset_size):>7f}")
+
+        generate_img(device, generator)
+        
+    except Exception as e:
+        raise Exception(f"テストに失敗しました: {str(e)}")
+    
 
 
 def visualize_history(history_discriminator: History, history_generator: History) -> None:
@@ -220,7 +295,7 @@ def visualize_history(history_discriminator: History, history_generator: History
     axs[1, 0].grid(True)
 
     # 右下 (generator_loss_per_epoch)
-    axs[1, 1].plot([i + 1 for i in range(len(history_discriminator.train_loss_per_epoch))], history_discriminator.train_loss_per_epoch)
+    axs[1, 1].plot([i + 1 for i in range(len(history_generator.train_loss_per_epoch))], history_generator.train_loss_per_epoch)
     axs[1, 1].set_title("Generator Loss per Epoch")
     axs[1, 1].set_xlabel("epoch")
     axs[1, 1].set_ylabel("loss")
@@ -232,12 +307,35 @@ def visualize_history(history_discriminator: History, history_generator: History
     plt.show()
 
 
-def test():
-    pass
+def generate_img(device: torch.device, generator: nn.Module) -> None:
+    """
+    ランダムに画像を生成する
 
+    Args:
+        devoce: デバイス
+        generator: 生成器
+    """
+    # 画像の生成
+    img_num = 9
+    latent_vec = torch.randn((img_num, LATENT_DIM), dtype=torch.float32).to(device)
 
-def generate_img():
-    pass
+    generator.eval()
+    with torch.no_grad():
+        img_generated = generator.forward(latent_vec).detach().cpu().numpy()
+
+    # 画像の表示
+    fig, axs = plt.subplots(3, 3, figsize=(6, 6))
+    axs = axs.ravel()
+
+    for i in range(img_num):
+        img = img_generated[i].squeeze()
+        
+        axs[i].imshow(img, cmap='gray')
+        axs[i].axis('off')
+
+    plt.suptitle('Generated Fashion MNIST Images')
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
 
 
 def main():
@@ -313,7 +411,15 @@ def main():
             )
 
         elif mode_str == "test":
-            test()
+            discriminator = torch.load(model_file_path_discriminator, weights_only=False)
+            generator = torch.load(model_file_path_generator, weights_only=False)
+            test(
+                device,
+                dataloaders,
+                discriminator,
+                generator,
+                loss_function
+            )
     
     except Exception as e:
         raise e

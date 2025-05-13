@@ -156,6 +156,7 @@ class Generator(nn.Module):
         x = self.conv_transpose_block_4(x)
 
         x = self.conv_transpose(x)
+        x = F.sigmoid(x)
 
         return x
 

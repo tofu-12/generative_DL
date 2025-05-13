@@ -19,7 +19,7 @@ main関数で基本的に全体を動作させる。
 - **train(): 訓練を行う関数**
 - **test(): テストを行う関数**
 - **visualize_history(): 学習履歴を可視化する関数**
-- **generate(): 画像を生成する関数**
+- **generate_img(): 画像を生成する関数**
 
 ### main()
 - 基本的な流れは以下の通り
@@ -29,6 +29,9 @@ main関数で基本的に全体を動作させる。
     4. 最適化手法の設定
     5. モードの選択 (select_mode())
     6. モードの実行
+        - train
+        - 重みをロードするtrain
+        - test
 
 - どこでエラーが発生したか分かるような例外処理
 
@@ -36,6 +39,7 @@ main関数で基本的に全体を動作させる。
 - 引数と返り値
     ```python
     def train(
+        device: torch.device,
         dataloaders: Dataloaders,
         discriminator: nn.Module,
         generator: nn.Module,
@@ -55,3 +59,25 @@ main関数で基本的に全体を動作させる。
 
 - 学習の過程で学習履歴を保存
 - エラーの際にはデータを保存するか確認するようにする
+- 最後に```visualize_history()```と```generate_img()```を呼び出す
+
+### test()
+- 引数と返り値
+    ```python
+    def test(
+        device: torch.device,
+        dataloaders: Dataloaders,
+        discriminator: nn.Module,
+        generator: nn.Module,
+        loss_function: Callable
+    ) -> None:
+    ```
+
+- 基本的な流れ
+    1. 識別器のラベルの作成
+    2. 実画像に対する識別器の損失の算出
+    3. 生成器による偽画像の生成
+    4. 偽画像に対する識別器の損失の算出
+    5. 損失の表示
+
+- 最後に```generate_img()```を呼び出す
