@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 sys.path.append(os.path.join(os.path.join(__file__), os.pardir))
-from module_blocks.CNN import ConvBlock, DecoderConvBlock
+from module_blocks.CNN import ConvBlock, ConvTransposeBlock
 from module_blocks.VAE import Reparameterize
 
 
@@ -64,10 +64,10 @@ class VAEDecoder(nn.Module):
         """
         super().__init__()
         self.fc = nn.Linear(latent_dim, 128 * 2 * 2) 
-        self.decoder_conv_block_1 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_2 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_3 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_4 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_1 = ConvTransposeBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_2 = ConvTransposeBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_3 = ConvTransposeBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_4 = ConvTransposeBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.final_conv_t = nn.ConvTranspose2d(in_channels=128, out_channels=3, kernel_size=3, stride=2, padding=1, output_padding=1)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
